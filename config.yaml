@@ -26,11 +26,15 @@ server:
   threads: -1            # -1 = llama.cpp auto-detects
   batch_size: 2048
   ubatch_size: 512
-  max_tokens: 256
-  speculative: true      # FULL tier uses LITE as draft
+  max_tokens: 2048
+  request_timeout_s: 180 # total streaming timeout (seconds); 0 = no timeout
+  speculative: false     # FULL tier uses LITE as draft; off by default (5x slower on CPU)
   spec_draft_n_max: 8    # tokens to draft per step
   health_timeout_s: 120  # seconds to wait for server to be ready
   idle_timeout_s: 300    # seconds before lazy-started servers are stopped
+
+bench:
+  max_tokens: 256        # token cap used by bench_spec.py and other harnesses
 
 router:
   artifacts_dir: "router/artifacts"

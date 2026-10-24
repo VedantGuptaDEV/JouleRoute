@@ -82,27 +82,30 @@ def _mid_cmd(exe: str, cfg: dict) -> list[str]:
     return _base_cmd(exe, m["path"], m["port"], cfg)
 
 
-def _full_cmd(exe: str, cfg: dict, no_spec: bool = False) -> list[str]:
+def _full_cmd(exe: str, cfg: dict, no_spec: bool = False, force_spec: bool = False) -> list[str]:
     m_full = cfg["models"]["full"]
     m_lite = cfg["models"]["lite"]
     srv = cfg["server"]
     cmd = _base_cmd(exe, m_full["path"], m_full["port"], cfg)
 
-    if not no_spec and srv.get("speculative", True):
-        # Use LITE as the draft model for speculative decoding.
-        # Flags confirmed from `llama-server --help`:
-        #   --spec-draft-model FNAME
-        #   --spec-type  draft-simple
-        #   --spec-draft-n-max N
+    # Resolution order: --spec (force_spec) > --no-spec (no_spec) > config default
+    if force_spec:
+        spec_on = True
+    elif no_spec:
+        spec_on = False
+    else:
+        spec_on = srv.get("speculative", False)
+
+    if spec_on:
         draft_path = str(Path(m_lite["path"]).resolve())
         cmd += [
             "--spec-draft-model", draft_path,
             "--spec-type",        "draft-simple",
             "--spec-draft-n-max", str(srv.get("spec_draft_n_max", 8)),
         ]
-        log.info("FULL: speculative decoding enabled (draft=%s)", draft_path)
+        log.info("FULL: speculative decoding: ON (draft=%s)", draft_path)
     else:
-        log.info("FULL: speculative decoding disabled (--no-spec or config)")
+        log.info("FULL: speculative decoding: OFF")
 
     return cmd
 
@@ -154,7 +157,10 @@ def stop_all() -> None:
         if proc.poll() is None:
             log.info("Stopping %s (pid %d) ...", tier.name, proc.pid)
             if sys.platform == "win32":
-                proc.send_signal(signal.CTRL_BREAK_EVENT)
+                subprocess.run(
+                    ["taskkill", "/F", "/PID", str(proc.pid)],
+                    capture_output=True,
+                )
             else:
                 proc.terminate()
             try:
@@ -171,7 +177,7 @@ def stop_all() -> None:
 # Public API used by gateway / tests
 # ---------------------------------------------------------------------------
 
-def start_all(cfg: dict, no_spec: bool = False) -> None:
+def start_all(cfg: dict, no_spec: bool = False, force_spec: bool = False) -> None:
     """Start LITE, MID, FULL and wait for all health checks."""
     exe = cfg["llama_server_exe"]
     host = cfg["gateway"]["host"]
@@ -182,13 +188,13 @@ def start_all(cfg: dict, no_spec: bool = False) -> None:
     tiers_cmds = [
         (Tier.LITE, _lite_cmd(exe, cfg)),
         (Tier.MID,  _mid_cmd(exe, cfg)),
-        (Tier.FULL, _full_cmd(exe, cfg, no_spec=no_spec)),
+        (Tier.FULL, _full_cmd(exe, cfg, no_spec=no_spec, force_spec=force_spec)),
     ]
 
     for tier, cmd in tiers_cmds:
         start_server(tier, cmd)
 
-    # Health-check in order (LITE first — FULL depends on it for speculation)
+    # Health-check in order
     for tier, _ in tiers_cmds:
         port = cfg["models"][tier.name.lower()]["port"]
         wait_for_health(tier, host, port, timeout_s=timeout)
@@ -221,10 +227,16 @@ def _parse_args() -> argparse.Namespace:
         description="Start the three llama-server processes for JouleRoute.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument(
+    spec_group = parser.add_mutually_exclusive_group()
+    spec_group.add_argument(
+        "--spec",
+        action="store_true",
+        help="Force speculative decoding ON for FULL, overriding config.",
+    )
+    spec_group.add_argument(
         "--no-spec",
         action="store_true",
-        help="Start FULL without speculative decoding (for benchmarking).",
+        help="Force speculative decoding OFF for FULL, overriding config.",
     )
     parser.add_argument(
         "--config",
@@ -249,16 +261,14 @@ def main() -> None:
         signal.signal(signal.SIGTERM, _shutdown)
 
     try:
-        start_all(cfg, no_spec=args.no_spec)
+        start_all(cfg, no_spec=args.no_spec, force_spec=args.spec)
     except (FileNotFoundError, RuntimeError) as exc:
         log.error("%s", exc)
         stop_all()
         sys.exit(1)
 
     log.info("Servers running. Press Ctrl-C to stop.")
-    # Keep the process alive so servers stay up
     while True:
-        # Check that child processes are still alive
         for tier, proc in list(_processes.items()):
             if proc.poll() is not None:
                 log.error(

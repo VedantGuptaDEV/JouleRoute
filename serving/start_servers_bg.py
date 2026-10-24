@@ -56,7 +56,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Start all three llama-servers in the background.",
     )
-    parser.add_argument("--no-spec", action="store_true")
+    spec_group = parser.add_mutually_exclusive_group()
+    spec_group.add_argument(
+        "--spec",
+        action="store_true",
+        help="Force speculative decoding ON for FULL, overriding config.",
+    )
+    spec_group.add_argument(
+        "--no-spec",
+        action="store_true",
+        help="Force speculative decoding OFF for FULL, overriding config.",
+    )
     parser.add_argument("--config", default=str(_REPO_ROOT / "config.yaml"))
     args = parser.parse_args()
 
@@ -70,7 +80,7 @@ def main() -> None:
     cmds = [
         (Tier.LITE, _lite_cmd(exe, cfg)),
         (Tier.MID,  _mid_cmd(exe, cfg)),
-        (Tier.FULL, _full_cmd(exe, cfg, no_spec=args.no_spec)),
+        (Tier.FULL, _full_cmd(exe, cfg, no_spec=args.no_spec, force_spec=args.spec)),
     ]
 
     pids: dict[str, int] = {}

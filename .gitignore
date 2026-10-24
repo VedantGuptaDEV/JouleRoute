@@ -7,3 +7,4 @@ __pycache__/
 .env
 tempCodeRunnerFile.*
 serving/.server_pids.json
+results/*.csv
