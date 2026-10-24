@@ -1,0 +1,75 @@
+seed: 42
+
+# llama-server binary
+llama_server_exe: "C:\\Users\\Vedant Gupta\\AppData\\Local\\Microsoft\\WinGet\\Packages\\ggml.llamacpp_Microsoft.Winget.Source_8wekyb3d8bbwe\\llama-server.exe"
+
+models:
+  lite:
+    repo: "bartowski/Qwen_Qwen3.5-0.8B-GGUF"
+    file: "Qwen_Qwen3.5-0.8B-Q4_K_M.gguf"
+    path: "models/Qwen_Qwen3.5-0.8B-Q4_K_M.gguf"
+    port: 8081
+  mid:
+    repo: "bartowski/Qwen_Qwen3.5-2B-GGUF"
+    file: "Qwen_Qwen3.5-2B-Q4_K_M.gguf"
+    path: "models/Qwen_Qwen3.5-2B-Q4_K_M.gguf"
+    port: 8082
+  full:
+    repo: "bartowski/Qwen_Qwen3.5-4B-GGUF"
+    file: "Qwen_Qwen3.5-4B-Q4_K_M.gguf"
+    path: "models/Qwen_Qwen3.5-4B-Q4_K_M.gguf"
+    port: 8083
+
+server:
+  host: "127.0.0.1"
+  ctx_size: 4096
+  threads: -1            # -1 = llama.cpp auto-detects
+  batch_size: 2048
+  ubatch_size: 512
+  max_tokens: 256
+  speculative: true      # FULL tier uses LITE as draft
+  spec_draft_n_max: 8    # tokens to draft per step
+  health_timeout_s: 120  # seconds to wait for server to be ready
+  idle_timeout_s: 300    # seconds before lazy-started servers are stopped
+
+router:
+  artifacts_dir: "router/artifacts"
+
+cache:
+  enabled: true
+  size: 512
+  ttl_s: 3600
+
+pii:
+  ner_enabled: false
+
+escalation:
+  enabled: true
+  window: 16
+  min_tokens: 8
+  h_max: null            # set after offline tuning on val split
+
+controller:
+  update_every_requests: 5
+  max_tau_step: 0.03
+  power_window_s: 120
+
+battery:
+  mode: simulated
+  capacity_wh: 50
+  typical_watts: 8.0
+
+energy:
+  backend: auto
+  idle_watts: null       # set by calibrate_idle.py
+
+gateway:
+  host: "127.0.0.1"
+  port: 8000
+
+telemetry:
+  db: "data/telemetry.sqlite"
+  store_query_text: true
+
+cloud:
+  enabled: false

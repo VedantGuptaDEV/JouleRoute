@@ -1,0 +1,9 @@
+models/
+data/
+.venv/
+__pycache__/
+*.gguf
+*.sqlite
+.env
+tempCodeRunnerFile.*
+serving/.server_pids.json
