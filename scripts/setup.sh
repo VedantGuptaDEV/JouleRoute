@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # One-time setup after cloning, on any Linux x86-64 machine (CPU-only or NVIDIA GPU):
-#   1. Python 3.12 venv with requirements.txt; on a GPU machine also CUDA 12.6 PyTorch so the
-#      classifier fine-tunes on the GPU (TORCH=cpu keeps the CPU build; needs driver 560 or newer)
+#   1. Python 3.12 venv with requirements.txt
 #   2. llama.cpp b11840 CPU build -> tools/llama-b11840/ (what config.yaml serves with), and on a
 #      GPU machine also the CUDA 12.8 build + CUDA runtime -> tools/llama-b11840-cuda/
-#   3. the three GGUF models -> models/ (about 4.2 GiB)
+#   3. the three GGUF models -> models/ (about 4.2 GiB; files already there are kept)
 # Needs: uv, curl, tar. No CUDA toolkit needed. Safe to rerun: finished steps are skipped.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -25,11 +24,6 @@ fi
 echo "== Python environment"
 [ -d .venv ] || uv venv -p 3.12 .venv
 uv pip install -p .venv --index-strategy unsafe-best-match --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
-if [ "$GPU" = 1 ] && [ "${TORCH:-cuda}" != cpu ]; then
-    torch_version=$(sed -n 's/^torch==\([0-9.]*\)+cpu$/\1/p' requirements.txt)
-    uv pip install -p .venv --index-strategy unsafe-best-match --extra-index-url https://download.pytorch.org/whl/cu126 "torch==$torch_version+cu126"
-fi
-.venv/bin/python -c "import torch; print('PyTorch', torch.__version__, '| CUDA:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'not available')"
 
 # install_llama <dest> <tarball>...: unpack release tarballs side by side into <dest>
 install_llama() {
@@ -65,4 +59,4 @@ echo "== models"
 .venv/bin/python serving/download_models.py
 
 echo
-echo "Setup done. Run the app: scripts/run_app.sh   Train the router: scripts/train_router.sh"
+echo "Setup done. Run the app: scripts/run_app.sh"

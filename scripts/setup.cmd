@@ -1,10 +1,9 @@
 @echo off
 rem One-time setup after cloning, on Windows 10/11 x64 from cmd (no WSL, CPU-only or NVIDIA GPU):
-rem   1. Python 3.12 venv with requirements.txt; with an NVIDIA GPU also CUDA 12.6 PyTorch so the
-rem      classifier fine-tunes on the GPU (set TORCH=cpu to keep the CPU build)
+rem   1. Python 3.12 venv with requirements.txt
 rem   2. llama.cpp b11840 CPU build -> tools\llama-b11840\, and with an NVIDIA GPU also the
 rem      CUDA 12.4 build + CUDA runtime -> tools\llama-b11840-cuda\
-rem   3. the three GGUF models -> models\ (about 4.2 GiB)
+rem   3. the three GGUF models -> models\ (about 4.2 GiB; files already there are kept)
 rem Needs: uv (winget install --id=astral-sh.uv -e). curl and tar come with Windows 10 and 11.
 rem Safe to rerun: finished steps are skipped.
 setlocal
@@ -22,8 +21,6 @@ if %GPU%==1 (nvidia-smi --query-gpu=name,memory.total,driver_version --format=cs
 echo == Python environment
 if not exist %PY% (uv venv -p 3.12 .venv || exit /b 1)
 uv pip install -p .venv --index-strategy unsafe-best-match --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt || exit /b 1
-if %GPU%==1 if /i not "%TORCH%"=="cpu" call :cuda_torch || exit /b 1
-%PY% -c "import torch; print('PyTorch', torch.__version__, '| CUDA:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'not available')" || exit /b 1
 
 echo == llama.cpp %BUILD% (CPU)
 call :install_llama tools\llama-%BUILD% llama-%BUILD%-bin-win-cpu-x64.zip || exit /b 1
@@ -38,12 +35,6 @@ echo == models
 echo.
 echo Setup done. Run the app: scripts\run_app.cmd
 exit /b 0
-
-:cuda_torch
-rem requirements.txt pins torch==X+cpu; install the same version built for CUDA 12.6
-for /f "tokens=2 delims==+" %%v in ('findstr /b "torch==" requirements.txt') do set TORCH_VERSION=%%v
-uv pip install -p .venv --index-strategy unsafe-best-match --extra-index-url https://download.pytorch.org/whl/cu126 "torch==%TORCH_VERSION%+cu126"
-exit /b %errorlevel%
 
 :install_llama
 rem install_llama <dest> <zip>...: unpack release zips (flat: exe and DLLs at the root) into <dest>

@@ -1,7 +1,7 @@
 """Prompt templates per query category.
 
-Shared by router/data/generate_answers.py and the app: correctness labels are only
-valid if the app wraps queries with exactly these templates.
+The router was trained on answers to queries wrapped in exactly these templates, so the app
+must use the same ones.
 """
 
 # Fixed subset of CLINC150 intents that an on-device assistant would handle.

@@ -59,7 +59,7 @@ def main():
     parser.add_argument("--no-spec", action="store_true", help="start FULL without speculative decoding")
     parser.add_argument("--log-dir", type=Path, default=repo_path("data/logs"))
     parser.add_argument("--llama-server", type=Path, default=repo_path(cfg["server"]["llama_server_bin"]),
-                        help="llama-server binary (e.g. the CUDA build from TRAINING.md)")
+                        help="llama-server binary (e.g. the CUDA build in tools/llama-b11840-cuda)")
     args = parser.parse_args()
     speculative = cfg["server"]["speculative"] and not args.no_spec
     args.log_dir.mkdir(parents=True, exist_ok=True)

@@ -2,7 +2,8 @@
 
 Once after cloning (needs [uv](https://docs.astral.sh/uv/); CPU-only or NVIDIA, Linux x86-64): creates
 `.venv`, installs llama.cpp into `tools/` and downloads the three models (about 4.2 GiB) into `models/`.
-The trained router is in the repo (`router/artifacts/`).
+The router is already trained and in the repo (`router/artifacts/bert_tiny`). If you already have the
+three `.gguf` files from `config.yaml`, put them in `models/` first and setup skips the download.
 
 ```bash
 scripts/setup.sh
@@ -17,7 +18,7 @@ scripts\run_app.cmd
 scripts\run_app.cmd -p "what is 17 * 23"
 ```
 
-Windows Terminal shows the chat best. The training pipeline (`train_router.sh`, `grade.py`) is Linux-only.
+Windows Terminal shows the chat best.
 
 One command starts the model servers and the gateway in the background, opens the chat, and stops
 them when the chat exits (anything already running is reused; logs in `data/logs/`):
@@ -50,8 +51,7 @@ CLI commands: `/model auto|lite|mid|full`, `/mode saver|balanced|performance`, `
 Answers have no length cap by default: the gateway omits `max_tokens` unless the request sets one,
 so the model stops when it is done. The only hard bound is the context window (`server.ctx_size`,
 4096 tokens for prompt + answer); a receipt ending in "cut off at a full context window" means that
-was hit. `/tokens <n>` or `--max-tokens` sets a cap. Labels and benchmarks use `server.max_tokens`
-(256): `generate_answers.py` passes it directly, and the benchmark harness must pass it in each request.
+was hit. `/tokens <n>` or `--max-tokens` sets a cap.
 
 `router.tau_override` in `config.yaml` is a manual confidence threshold (currently 0.32) that replaces
 the risk-controlled one from `thresholds.json`; set it to `null` to go back.
@@ -60,4 +60,5 @@ Not built yet (so not shown as stages): rule engine, in-generation escalation, e
 receipt, battery controller. The router runs the fp32 PyTorch checkpoint until
 `router/artifacts/bert_tiny/model.int8.onnx` is exported.
 
-Training the router on a GPU machine: see `TRAINING.md`.
+The router in this repo was trained on a 100-query subset, so its routing is rough; the manual
+`tau_override` above is what makes it use LITE and MID at all.
