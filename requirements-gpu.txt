@@ -1,0 +1,1 @@
+vllm  # GPU only: answer generation on Colab (generate_answers.py --backend vllm)

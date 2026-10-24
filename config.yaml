@@ -1,0 +1,55 @@
+# Single source of all ports, paths, thresholds and constants (see Readme.md §6).
+# Values marked null are filled by the scripts that measure them.
+
+seed: 42
+
+models:
+  lite: {hf_id: Qwen/Qwen3.5-0.8B, repo: unsloth/Qwen3.5-0.8B-GGUF, file: Qwen3.5-0.8B-Q4_K_M.gguf, port: 8081}
+  mid:  {hf_id: Qwen/Qwen3.5-2B,   repo: unsloth/Qwen3.5-2B-GGUF,   file: Qwen3.5-2B-Q4_K_M.gguf,   port: 8082}
+  full: {hf_id: Qwen/Qwen3.5-4B,   repo: unsloth/Qwen3.5-4B-GGUF,   file: Qwen3.5-4B-Q4_K_M.gguf,   port: 8083}
+
+server:
+  models_dir: models
+  llama_server_bin: tools/llama-b11840/llama-server
+  ctx_size: 4096
+  threads: 8
+  batch_size: 512
+  max_tokens: 256
+  temperature: 0.0
+  speculative: true
+
+router:
+  artifacts_root: router/artifacts           # one subfolder per trained router
+  artifacts_dir: router/artifacts/bert_tiny  # the router the app loads
+  # MANUAL demo threshold: replaces thresholds.json (tau_min, mode presets) in the app.
+  # Not risk-controlled, so the accuracy-loss bound does not hold. null = use thresholds.json.
+  tau_override: 0.32
+  results_dir: router/results
+  data_dir: router/data
+  base_model: google/bert_uncased_L-2_H-128_A-2
+  upper_model: sentence-transformers/all-MiniLM-L6-v2
+  max_length: 64
+  splits: {train: 0.60, val: 0.10, calib: 0.15, test: 0.15}
+  # C[true][pred]: under-routing (below the diagonal) costs more than over-routing.
+  cost_matrix:
+    - [0, 1, 2]
+    - [4, 0, 1]
+    - [6, 4, 0]
+  cost_lambda: 0.5
+  # PLACEHOLDER relative energy per tier; replaced by results/energy_profile.json once measured.
+  energy_weights_placeholder: {lite: 1.0, mid: 2.5, full: 5.0}
+  alpha: 0.03
+  delta: 0.05
+  tau_sweep: {start: 0.30, stop: 0.99, step: 0.01}
+  rouge_l_threshold: {summary: 0.25, rewrite: 0.70}
+  code_test_timeout_s: 5
+
+cache: {enabled: true, size: 512, ttl_s: 3600}
+pii: {ner_enabled: false}
+escalation: {enabled: true, window: 16, min_tokens: 8, h_max: null}
+controller: {update_every_requests: 5, max_tau_step: 0.03, power_window_s: 120}
+battery: {mode: simulated, capacity_wh: 50, typical_watts: 8}
+energy: {backend: auto, idle_watts: null}
+gateway: {host: 127.0.0.1, port: 8000}
+telemetry: {db: data/telemetry.sqlite, store_query_text: true}
+cloud: {enabled: false}
