@@ -1,5 +1,23 @@
 # Running the app
 
+Once after cloning (needs [uv](https://docs.astral.sh/uv/); CPU-only or NVIDIA, Linux x86-64): creates
+`.venv`, installs llama.cpp into `tools/` and downloads the three models (about 4.2 GiB) into `models/`.
+The trained router is in the repo (`router/artifacts/`).
+
+```bash
+scripts/setup.sh
+```
+
+One command starts the model servers and the gateway in the background, opens the chat, and stops
+them when the chat exits (anything already running is reused; logs in `data/logs/`):
+
+```bash
+scripts/run_app.sh                        # full-screen chat; same options as cli/joule.py
+scripts/run_app.sh -p "what is 17 * 23"   # one-shot
+```
+
+Or each part in its own terminal:
+
 ```bash
 PY=.venv/bin/python
 $PY serving/launch.py        # terminal 1: LITE :8081, MID :8082, FULL :8083 (FULL drafts with LITE); --no-spec to disable

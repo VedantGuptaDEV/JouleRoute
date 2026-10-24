@@ -4,7 +4,7 @@ Setup (CPU, Python 3.12):
 
 ```bash
 uv venv -p 3.12 .venv
-uv pip install -p .venv --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+uv pip install -p .venv --index-strategy unsafe-best-match --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
 ```
 
 Local answer generation needs `tools/llama-b11840/llama-server` (llama.cpp CPU release b11840)

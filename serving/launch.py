@@ -7,6 +7,7 @@ thread and batch settings.
 """
 import argparse
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -67,6 +68,8 @@ def main():
     env = {**os.environ, "LD_LIBRARY_PATH": os.pathsep.join(
         p for p in [str(server_bin.parent), os.environ.get("LD_LIBRARY_PATH", "")] if p)}
 
+    # SIGTERM (e.g. from scripts/run_app.sh) stops the servers the same way Ctrl-C does.
+    signal.signal(signal.SIGTERM, signal.default_int_handler)
     procs = {}
     try:
         for tier in args.tiers:

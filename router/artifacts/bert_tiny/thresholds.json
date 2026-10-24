@@ -1,0 +1,15 @@
+{
+  "alpha": 0.03,
+  "delta": 0.05,
+  "n_calib": 15,
+  "tau_min": 1.0,
+  "tau_crc": null,
+  "default_tau": 1.0,
+  "mode_presets": {
+    "saver": 1.0,
+    "balanced": 1.0,
+    "performance": 1.0
+  },
+  "energy_weights": "placeholder",
+  "warning": "NO tau in the sweep satisfies alpha=0.03 at delta=0.05 on 15 calib queries. tau_min is set to 1.0, which sends every query to FULL."
+}
