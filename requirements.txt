@@ -2,11 +2,14 @@ fastapi==0.162.0
 huggingface_hub==2.3.0
 numpy==2.5.4
 onnxruntime==1.31.0
+pandas==2.2.3
+plotly==6.1.2
 pydantic==2.14.1
 pytest==9.1.1
 pyyaml==6.0.3
 requests==2.34.2
 rich==15.0.0
+streamlit==1.44.1
 textual==8.2.8
 torch==2.14.1+cpu
 transformers==5.20.2
