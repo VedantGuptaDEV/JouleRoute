@@ -9,7 +9,7 @@ CONFIG_PATH = REPO_ROOT / "config.yaml"
 
 
 def load_config(path: Path = CONFIG_PATH) -> dict[str, Any]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     for key in ("seed", "models", "server", "router"):
         if key not in cfg:

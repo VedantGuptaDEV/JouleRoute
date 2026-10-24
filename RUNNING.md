@@ -8,6 +8,17 @@ The trained router is in the repo (`router/artifacts/`).
 scripts/setup.sh
 ```
 
+On Windows 10/11 (x64, from cmd, no WSL), install uv with `winget install --id=astral-sh.uv -e`, open a
+new cmd, then use the `.cmd` scripts; everything else in this file is the same:
+
+```bat
+scripts\setup.cmd
+scripts\run_app.cmd
+scripts\run_app.cmd -p "what is 17 * 23"
+```
+
+Windows Terminal shows the chat best. The training pipeline (`train_router.sh`, `grade.py`) is Linux-only.
+
 One command starts the model servers and the gateway in the background, opens the chat, and stops
 them when the chat exits (anything already running is reused; logs in `data/logs/`):
 
