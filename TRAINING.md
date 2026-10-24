@@ -38,15 +38,21 @@ git checkout gpu-training-and-chat-ui
 scripts/setup_gpu.sh
 ```
 
-`setup_gpu.sh` creates `.venv` (Python 3.12, CPU PyTorch), installs llama.cpp b11840 CUDA 12.8
+`setup_gpu.sh` creates `.venv` (Python 3.12, CUDA 12.6 PyTorch; `TORCH=cpu` for the CPU build), installs llama.cpp b11840 CUDA 12.8
 into `tools/llama-b11840-cuda/` (prints the GPU it sees), and downloads the three GGUF models
 (about 4.2 GiB) into `models/`.
 
 ## 3. Train
 
 ```bash
-scripts/train_router.sh            # N=3500 PARALLEL=8 by default
+scripts/train_router.sh            # GPU: N=3500 PARALLEL=8; CPU-only: N=1000 PARALLEL=4
+TRAIN_ONLY=1 scripts/train_router.sh                 # retrain on the answers you already have
+MODEL=sentence-transformers/all-MiniLM-L6-v2 scripts/train_router.sh   # fine-tune MiniLM instead
 ```
+
+The script picks the CUDA llama.cpp build when `nvidia-smi` sees a GPU and `setup_gpu.sh` has
+installed it, else the CPU build from `config.yaml` (no NVIDIA needed, just slower answers).
+Changing `N` sets the old dataset and its answers aside in `router/data/previous_<time>/`.
 
 It runs: build dataset → answers from all three tiers on the GPU → grade → labels and splits →
 baseline router → BERT-Tiny → calibration → risk-controlled τ → tests. If it stops (closed
@@ -62,9 +68,9 @@ Check the result:
   presets; a `warning` field means no τ met the accuracy-loss bound
 - `router/results/calibration.json`, `reliability_bert_tiny.png`, `threshold_sweep.csv`
 
-Optional: with a CUDA build of PyTorch in `.venv` (see pytorch.org for the wheel matching your
-driver), `train_bert.py` uses the GPU automatically (`--device auto`). Worth it mainly for the
-larger MiniLM router (`train_bert.py --model sentence-transformers/all-MiniLM-L6-v2`).
+With the CUDA PyTorch from `setup_gpu.sh`, the classifier fine-tunes on the GPU too
+(`train_bert.py --device auto`; the script prints `torch device: cuda`). That matters most for
+the larger MiniLM router (`MODEL=sentence-transformers/all-MiniLM-L6-v2`).
 
 ## 4. Bring the results back
 

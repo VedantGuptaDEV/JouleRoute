@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # One-time setup of a Linux machine with an NVIDIA GPU for training the router (see TRAINING.md):
-#   1. Python 3.12 venv with requirements.txt (CPU PyTorch; the classifier trains in minutes on CPU)
+#   1. Python 3.12 venv with requirements.txt, then CUDA 12.6 PyTorch so the classifier
+#      fine-tunes on the GPU (TORCH=cpu keeps the CPU build; needs driver 560 or newer)
 #   2. llama.cpp b11840 prebuilt CUDA 12.8 build + CUDA runtime -> tools/llama-b11840-cuda/
 #   3. the three GGUF models -> models/
 # Needs: the NVIDIA driver (nvidia-smi works), uv, curl, tar. No CUDA toolkit needed.
@@ -19,6 +20,11 @@ nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 echo "== Python environment"
 [ -d .venv ] || uv venv -p 3.12 .venv
 uv pip install -p .venv --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+if [ "${TORCH:-cuda}" != cpu ]; then
+    torch_version=$(sed -n 's/^torch==\([0-9.]*\)+cpu$/\1/p' requirements.txt)
+    uv pip install -p .venv --extra-index-url https://download.pytorch.org/whl/cu126 "torch==$torch_version+cu126"
+fi
+.venv/bin/python -c "import torch; print('PyTorch', torch.__version__, '| CUDA:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'not available')"
 
 echo "== llama.cpp $BUILD (CUDA $CUDA)"
 if [ -x "$DEST/llama-server" ]; then
