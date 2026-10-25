@@ -217,24 +217,46 @@ def cumulative_energy(df: pd.DataFrame) -> pd.DataFrame:
 
 def median_latency_per_tier(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Returns DataFrame with columns: tier, ttft_ms_median, total_ms_median, n.
+    Returns DataFrame with columns:
+      tier, ttft_ms_median, ttft_ms_p95, total_ms_median, total_ms_p95, n.
     Includes only tiers with at least one non-null measurement.
+    p95 = 95th-percentile latency (used in the tooltip per spec §5.K).
     """
     if df.empty:
-        return pd.DataFrame(columns=["tier", "ttft_ms_median", "total_ms_median", "n"])
+        return pd.DataFrame(columns=[
+            "tier", "ttft_ms_median", "ttft_ms_p95",
+            "total_ms_median", "total_ms_p95", "n",
+        ])
 
     rows = []
     for tier in ("lite", "mid", "full"):
         sub = df[df["tier"] == tier]
         if sub.empty:
             continue
+        ttft  = sub["ttft_ms"].dropna()
+        total = sub["total_ms"].dropna()
         rows.append({
-            "tier": tier,
-            "ttft_ms_median": sub["ttft_ms"].dropna().median() if not sub["ttft_ms"].dropna().empty else None,
-            "total_ms_median": sub["total_ms"].dropna().median() if not sub["total_ms"].dropna().empty else None,
-            "n": len(sub),
+            "tier":            tier,
+            "ttft_ms_median":  float(ttft.median())          if not ttft.empty  else None,
+            "ttft_ms_p95":     float(ttft.quantile(0.95))    if not ttft.empty  else None,
+            "total_ms_median": float(total.median())         if not total.empty else None,
+            "total_ms_p95":    float(total.quantile(0.95))   if not total.empty else None,
+            "n":               len(sub),
         })
     return pd.DataFrame(rows)
+
+
+def current_tau(df: pd.DataFrame) -> float | None:
+    """
+    Return the most-recently recorded tau value from telemetry, or None.
+    Used by the confidence histogram to draw the threshold line.
+    """
+    if df.empty or "tau" not in df.columns:
+        return None
+    valid = df["tau"].dropna()
+    if valid.empty:
+        return None
+    return float(valid.iloc[-1])
 
 
 def recent_requests(df: pd.DataFrame, n: int = 20) -> pd.DataFrame:

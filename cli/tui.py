@@ -22,7 +22,7 @@ from textual.widgets import Input, Markdown, Static
 from cli.client import GatewayClient
 from cli.render import (ACCENT, DIM, ERR, FAINT, FG, LINE, MUTED, OK, TIER_STYLE, WARN, TurnState, header,
                         meta, pipeline_table, trace)
-from shared.prompts import CATEGORIES
+from shared.prompts import CATEGORIES, parse_tier_override
 
 MODELS = ["auto", "lite", "mid", "full"]
 MODES = ["saver", "balanced", "performance"]
@@ -368,7 +368,15 @@ class JouleApp(App):
         self.show_empty(False)
         if not self.context:
             self.messages.clear()
-        self.messages.append({"role": "user", "content": line})
+
+        # Natural-language tier override: "use full model — explain X" → forces full for this turn.
+        tier_override, clean_line = parse_tier_override(line)
+        if tier_override:
+            self.notify(f"Tier override detected: forcing {tier_override.upper()} for this query.", timeout=3)
+        effective_model = tier_override if tier_override else self.model
+        send_text = clean_line if tier_override else line
+
+        self.messages.append({"role": "user", "content": send_text})
         reply = Reply(self.models())
         await self.chat.mount(Horizontal(Static(line, classes="bubble"), classes="user-row"))
         await self.chat.mount(reply)
@@ -376,8 +384,8 @@ class JouleApp(App):
         self.turn = (reply, cancel)
         self.busy = True
         self.render_chrome()
-        self.run_turn(reply, {"model": self.model, "messages": list(self.messages), "x_category": self.category,
-                              "max_tokens": self.max_tokens}, cancel)
+        self.run_turn(reply, {"model": effective_model, "messages": list(self.messages),
+                              "x_category": self.category, "max_tokens": self.max_tokens}, cancel)
 
     @work(thread=True, group="chat")
     def run_turn(self, reply: Reply, body: dict, cancel: threading.Event):

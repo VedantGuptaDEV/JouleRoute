@@ -1,0 +1,21 @@
+# ── JouleRoute Streamlit theme ───────────────────────────────────────────────
+# All visual tokens are defined here and in dashboard/styles.py.
+# To change the palette, edit BOTH this file and the :root block in styles.py.
+#
+# Palette tokens
+#   BG_BASE        #0F172A   deep navy — main page background
+#   BG_SURFACE     #1E293B   card / sidebar surface
+#   BG_ELEVATED    #263548   slightly lifted surface (hover, inputs)
+#   ACCENT         #6366F1   indigo — primary interactive colour
+#   ACCENT_TEAL    #14B8A6   teal — success / positive delta
+#   TEXT_MUTED     #94A3B8   secondary text, captions, labels
+#   TEXT_PRIMARY   #F1F5F9   headings and key values
+#   BORDER         #334155   subtle dividers
+
+[theme]
+base                  = "dark"
+primaryColor          = "#6366F1"
+backgroundColor       = "#0F172A"
+secondaryBackgroundColor = "#1E293B"
+textColor             = "#F1F5F9"
+font                  = "sans serif"
